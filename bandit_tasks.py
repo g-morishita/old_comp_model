@@ -1,12 +1,14 @@
 import numpy as np
 
+from abc import ABC, abstractclassmethod
 from typing import Union, Sequence
 
 
-class Bandit:
+class Bandit(ABC):
     """This abstract class Defines a bandit task."""
+    @abstractclassmethod
     def pull_arm(self):
-        raise NotImplementedError
+        pass
 
 
 class NormalMultiArmedBandit(Bandit):
@@ -49,7 +51,13 @@ class BernoulliMultiArmedBandit(Bandit):
         return self.arms[chosen_arm].give_reward()
 
 
-class NormalDistArm:
+class Arm(ABC):
+    @abstractclassmethod
+    def give_reward(self):
+        pass
+
+
+class NormalDistArm(Arm):
     def __init__(self, mean: Union[int, float], sd: Union[int, float]) -> None:
         self.mean = mean
         self.sd = sd
@@ -58,7 +66,7 @@ class NormalDistArm:
         return np.random.normal(self.mean, self.sd)[0]
 
 
-class BernouliDistArm:
+class BernouliDistArm(Arm):
     def __init__(self, mean: Union[int, float]) -> None:
         if (mean < 0) or (mean > 1):
             raise ValueError("mean must be between 0 and 1 \
