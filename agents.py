@@ -1,18 +1,21 @@
 import numpy as np
 
+from abc import ABC, abstractclassmethod
 from typing import Union, Sequence
 
 
-class Agent:
+class Agent(ABC):
     """Agent class is supposed to be in charge of choosing actions."""
     def __init__(self):
         self.estimated_values = None
 
+    @abstractclassmethod
     def choose_action(self):
-        raise NotImplementedError
+        pass
 
+    @abstractclassmethod
     def learn(self, chosen_action: int, reward: float):
-        raise NotImplementedError
+        pass
 
 
 class Q_learner_softmax(Agent):
