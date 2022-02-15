@@ -1,5 +1,5 @@
 from environment import SingleEnvironment
-from agents import Q_learner_softmax
+from agents import QSoftmax
 from bandit_tasks import BernoulliMultiArmedBandit
 
 
@@ -14,7 +14,7 @@ if __name__ == '__main__':
     time_horizon = 300
     hist_path = './history.json'
 
-    q_learner = Q_learner_softmax(
+    q_learner = QSoftmax(
             learning_rate,
             inverse_temperature,
             initial_values
