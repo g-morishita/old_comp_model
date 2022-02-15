@@ -5,16 +5,21 @@ from typing import Union, Sequence
 
 
 class Agent(ABC):
-    """Agent class is supposed to be in charge of choosing actions."""
+    """
+    Agent class is supposed to be in charge of
+    choosing actions and updating hyperparameters.
+    """
     def __init__(self):
         self.estimated_values = None
 
     @abstractclassmethod
     def choose_action(self):
+        """choose_action choose an action."""
         pass
 
     @abstractclassmethod
     def learn(self, chosen_action: int, reward: float):
+        """learn is supposed to update hyper parameters in a model."""
         pass
 
 
