@@ -22,6 +22,15 @@ class Agent(ABC):
         """learn is supposed to update hyper parameters in a model."""
         pass
 
+    @abstractclassmethod
+    def fit(
+            self,
+            observed_actions: Sequence[int],
+            observed_rewards: Sequence[int]
+            ):
+        """estimate free parameters with maximum likelihood esimation."""
+        pass
+
 
 class EpsilonGreedy(Agent):
     """
@@ -61,6 +70,13 @@ class EpsilonGreedy(Agent):
         self.estimated_values[chosen_action] = self.estimated_values[chosen_action] * (n_chosen_actions - 1) + reward
         self.estimated_values /= n_chosen_actions
 
+    def fit(
+            self,
+            observed_actions,
+            observed_rewards
+            ) -> Sequence[float]:
+        pass
+
 
 class QSoftmax(Agent):
     """
@@ -94,6 +110,13 @@ class QSoftmax(Agent):
 
     def learn(self, chosen_action: int, reward: float) -> None:
         self.estimated_values[chosen_action] = self.estimated_values[chosen_action] + self.learning_rate * (reward - self.estimated_values[chosen_action])
+
+    def fit(
+            self,
+            observed_actions: Sequence[int],
+            observed_rewards: Sequence[Union[int, float]]
+            ) -> Sequence[float]:
+        pass
 
     def _softmax(self) -> Sequence[float]:
         exponents = self.inverse_temperature * self.estimated_values
