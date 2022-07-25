@@ -1,6 +1,6 @@
 import numpy as np
 
-from abc import ABC, abstractclassmethod
+from abc import ABC, abstractmethod
 from functools import partial
 from typing import Union, Sequence
 
@@ -16,25 +16,25 @@ class Agent(ABC):
     def __init__(self):
         self.estimated_values = None
 
-    @abstractclassmethod
-    def choose_action(self):
+    @abstractmethod
+    def choose_action(self) -> int:
         """choose_action choose an action."""
         pass
 
-    @abstractclassmethod
-    def learn(self, chosen_action: int, reward: float):
-        """learn is supposed to update hyper parameters in a model."""
+    @abstractmethod
+    def learn(self, chosen_action: int, reward: float) -> None:
+        """learn is supposed to update hyperparameters in a model."""
         pass
 
-    @abstractclassmethod
+    @abstractmethod
     def fit(self, observed_actions: Sequence[int], observed_rewards: Sequence[int]):
-        """estimate free parameters with maximum likelihood esimation."""
+        """estimate free parameters with maximum likelihood estimation."""
         pass
 
 
 class EpsilonGreedy(Agent):
     """
-    EpsilonGreedy implements a agent that follows the epsilon greeddy method.
+    EpsilonGreedy implements a agent that follows the epsilon greedy method.
     """
 
     def __init__(
@@ -83,12 +83,8 @@ class QSoftmax(Agent):
     and chooses an action using softmax function.
     """
 
-    def __init__(
-        self,
-        learning_rate: float,
-        inverse_temperature: float,
-        initial_values: Sequence[Union[int, float]],
-    ) -> None:
+    def __init__(self, learning_rate: float, inverse_temperature: float, initial_values: Sequence[Union[int, float]]) -> None:
+        super().__init__()
         self.estimated_values = np.array(initial_values, dtype=float)
 
         if (0 < learning_rate) and (learning_rate < 1.0):
@@ -115,13 +111,16 @@ class QSoftmax(Agent):
         ] + self.learning_rate * (reward - self.estimated_values[chosen_action])
 
     def fit(
-        self,
-        n_arms: Sequence[int],
-        observed_actions: Sequence[int],
-        observed_rewards: Sequence[Union[int, float]],
-        fixed_free_params: dict,
-        init_param,
-        const=None,
+            self,
+            n_arms: Sequence[int],
+            observed_actions: Sequence[int],
+            observed_rewards: Sequence[Union[int, float]],
+            fixed_free_params: dict,
+            init_param,
+            initial_q=None,
+            fixed_index_q=None,
+            const=None,
+            options: dict = {"tol": 1e-8, "disp": False, "maxiter": 10000}
     ) -> Sequence[float]:
 
         params = {}
@@ -129,19 +128,22 @@ class QSoftmax(Agent):
         params["n_arms"] = n_arms
         params["observed_actions"] = observed_actions
         params["observed_rewards"] = observed_rewards
+        params["initial_q"] = initial_q
+        params["fixed_index_q"] = fixed_index_q
 
         objective = partial(self.calculate_nll, **params)
+
         def obj(x):
             return objective(*x)
         res = minimize(
             obj,
             init_param,
             method="COBYLA",
-            options={"tol": 1e-8, "disp": False, "maxiter": 100000},
+            options=options,
             constraints=const,
         )
 
-        return res.x
+        return res
 
     def calculate_nll(
         self,
@@ -150,25 +152,35 @@ class QSoftmax(Agent):
         n_arms: int,
         observed_actions: Sequence[int],
         observed_rewards: Union[Sequence[int], Sequence[float]],
+        initial_q: Sequence[float] = None,
+        fixed_index_q: Sequence[int] = None
     ) -> float:
         n_trials = len(observed_actions)
+
         Q = np.zeros((n_trials, n_arms), dtype=float)
+        if initial_q is not None:
+            Q[0] = initial_q
+
         probs = np.zeros((n_trials, n_arms), dtype=float)
         ll = 0
 
         for t in range(n_trials):
             probs[t] = self._softmax(Q[t], beta)
-            ll += np.log(probs[t, observed_actions[t]])
+            ll += np.log(probs[t, observed_actions[t]] + 1e-8)
 
             if t < n_trials - 1:
                 Q[t + 1] += Q[t]
-                Q[t + 1, observed_actions[t]] = Q[t, observed_actions[t]] + alpha * (
-                    observed_rewards[t] - Q[t, observed_actions[t]]
-                )
+                if (fixed_index_q is not None) and (observed_actions[t] in fixed_index_q):
+                    pass
+                else:
+                    Q[t + 1, observed_actions[t]] = Q[t, observed_actions[t]] + alpha * (
+                        observed_rewards[t] - Q[t, observed_actions[t]]
+                    )
 
         return -ll
 
-    def _softmax(self, x, beta) -> Sequence[float]:
+    @staticmethod
+    def _softmax(x, beta) -> Sequence[float]:
         exponents = beta * x
         max_exp = np.max(exponents)
 

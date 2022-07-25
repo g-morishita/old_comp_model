@@ -27,16 +27,16 @@ class TestQLearnerSoftmax:
     # learning rate is more than 1.
     def test_excess_learning_rate(self):
         with pytest.raises(ValueError):
-            agents.Q_learner_softmax(1.1, 0.1, [0, 0, 0])
+            agents.QSoftmax(1.1, 0.1, [0, 0, 0])
 
     # learning rate is negative.
     def test_negative_learning_rate(self):
         with pytest.raises(ValueError):
-            agents.Q_learner_softmax(-0.1, 0.1, [0, 0, 0])
+            agents.QSoftmax(-0.1, 0.1, [0, 0, 0])
 
     # check if learn works.
     def test_learn(self):
-        q_learner = agents.Q_learner_softmax(0.1, 2.0, [0, 0, 0])
+        q_learner = agents.QSoftmax(0.1, 2.0, [0, 0, 0])
         q_learner.learn(0, 1.0)
         assert q_learner.estimated_values[0] == pytest.approx(0.1)
         assert q_learner.estimated_values[1] == pytest.approx(0.0)
@@ -69,7 +69,7 @@ class TestQLearnerSoftmax:
 
     def test_uniform_choose_action(self):
         n_actions = 3
-        q_learner = agents.Q_learner_softmax(0.1, 2.0, [0 for _ in range(n_actions)])
+        q_learner = agents.QSoftmax(0.1, 2.0, [0 for _ in range(n_actions)])
 
         n_trials = 30000
         action_counter = Counter()
@@ -91,7 +91,7 @@ class TestQLearnerSoftmax:
     def test_uniform_choose_action2(self):
         # inverse_temperature equals 0, which means uniformly random.
         n_actions = 3
-        q_learner = agents.Q_learner_softmax(0.1, 0, [100, -1, 40])
+        q_learner = agents.QSoftmax(0.1, 0, [100, -1, 40])
 
         n_trials = 30000
         action_counter = Counter()
@@ -112,7 +112,7 @@ class TestQLearnerSoftmax:
 
     def test_nonuniform_choose_action2(self):
         initial_values = np.array([1, 2, 3])
-        q_learner = agents.Q_learner_softmax(0.1, 1.0, initial_values)
+        q_learner = agents.QSoftmax(0.1, 1.0, initial_values)
 
         n_trials = 30000
         action_counter = np.zeros(3)

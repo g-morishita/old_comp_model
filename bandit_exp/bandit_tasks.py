@@ -1,13 +1,12 @@
 import numpy as np
 
-from abc import ABC, abstractclassmethod
+from abc import ABC, abstractmethod
 from typing import Union, Sequence
 
 
 class Bandit(ABC):
     """This abstract class Defines a bandit task."""
-
-    @abstractclassmethod
+    @abstractmethod
     def pull_arm(self):
         pass
 
@@ -57,7 +56,6 @@ class BernoulliMultiArmedBandit(Bandit):
 
 
 class Arm(ABC):
-    @abstractclassmethod
     def give_reward(self):
         pass
 
