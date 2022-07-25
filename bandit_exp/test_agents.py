@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-import agents
+from bandit_exp import agents
 
 from collections import Counter
 
