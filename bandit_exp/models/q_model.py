@@ -99,8 +99,8 @@ class QSoftmaxModel(Model):
             )
 
         # the options for minimization.
-        options = {"tol": 1e-8, "maxiter": 10000}
-        allowed_keywords = set(["maxiter", "tol"])
+        options = {"maxiter": 10000}
+        allowed_keywords = set(["maxiter"])
         for k, v in kwargs.items():
             if k in allowed_keywords:
                 options[k] = v
