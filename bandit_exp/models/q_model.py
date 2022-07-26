@@ -1,7 +1,9 @@
+import warnings
 from abc import ABC, abstractmethod
 from typing import Union
 
 import numpy as np
+from scipy.optimize import minimize, LinearConstraint
 from scipy.special import softmax
 
 from .errors import AlreadyFittedError
@@ -71,14 +73,21 @@ class QSoftmaxModel(Model):
             self, num_choices: int, actions: array_like, rewards: array_like, **kwargs: dict
     ) -> None:
         """
-        Fit the model to data using the likelihood estimate method.
+        Fit the model to data using the maximum likelihood estimation (MLE).
 
         Parameters
         ----------
-        num_choices :
-        actions :
-        rewards :
-        kwargs :
+        num_choices : int
+            The number of choices
+        actions : array_like
+            The observed choices
+        rewards : array_like
+            The observed rewards
+        kwargs : {"maxiter", "tol", "n_trials"}
+            The options for `scipy.optimize.minimize`:
+            `n_trials` is how many times you run the minimization problems.
+            You need to run it multiple times because a solution might be local optimal.
+            The default value for n_trials is 5.
 
         Returns
         -------
@@ -89,10 +98,107 @@ class QSoftmaxModel(Model):
                 "The model has been already fitted. Create a new object to fit again."
             )
 
+        # the options for minimization.
+        options = {"tol": 1e-8, "maxiter": 10000}
+        allowed_keywords = set(["maxiter", "tol"])
+        for k, v in kwargs.items():
+            if k in allowed_keywords:
+                options[k] = v
+        n_trials = kwargs.get("n_trials", 5)
+
+        # Decide the negative log-likelihood function and the constraints according to the free parameters.
+        if (self.learning_rate is None) and (self.inverse_temperature is None):
+            def neg_ll(a, b):
+                return self.calculate_nll(a, b, num_choices, actions, rewards)
+
+            A = np.eye(2)
+            lb = np.array([0, 0])
+            ub = [1, np.inf]
+            const = LinearConstraint(A, lb, ub)
+
+            min_nll = np.inf
+            opt_x = None
+            for _ in range(n_trials):
+                init_a = np.random.beta(2, 2)
+                init_b = np.random.gamma(2, 0.333)
+                init_param = [init_a, init_b]
+                res = minimize(neg_ll, init_param, method="COBYLA", options=options, constraints=const)
+                if not res.success:
+                    warnings.warn(res.message)
+                else:
+                    if min_nll > res.fun:
+                        min_nll = res.fun
+                        opt_x = res.x
+
+            if opt_x is None:
+                warnings.warn("The estimation did not work")
+            else:
+                self.learning_rate = res.x[1][0]
+                self.inverse_temperature = res.x[1][1]
+
+        elif self.learning_rate is not None:
+            def neg_ll(b):
+                return self.calculate_nll(self.learning_rate, b, num_choices, actions, rewards)
+
+            A = np.eye(1)
+            lb = np.array([0])
+            ub = [np.inf]
+            const = LinearConstraint(A, lb, ub)
+
+            min_nll = np.inf
+            opt_x = None
+            for _ in range(n_trials):
+                init_b = np.random.gamma(2, 0.333)
+                init_param = [init_b]
+                res = minimize(neg_ll, init_param, method="COBYLA", options=options, constraints=const)
+                if not res.success:
+                    warnings.warn(res.message)
+                else:
+                    if min_nll > res.fun:
+                        min_nll = res.fun
+                        opt_x = res.x
+
+            if opt_x is None:
+                warnings.warn("The estimation did not work")
+            else:
+                self.inverse_temperature = res.x[1][0]
+
+        elif self.inverse_temperature is not None:
+            def neg_ll(a):
+                return self.calculate_nll(a, self.inverse_temperature, num_choices, actions, rewards)
+
+            A = np.eye(1)
+            lb = np.array([0])
+            ub = [1]
+            const = LinearConstraint(A, lb, ub)
+
+            min_nll = np.inf
+            opt_x = None
+            for _ in range(n_trials):
+                init_a = np.random.beta(2, 2, 1)
+                init_param = [init_a]
+                res = minimize(neg_ll, init_param, method="COBYLA", options=options, constraints=const)
+                if not res.success:
+                    warnings.warn(res.message)
+                else:
+                    if min_nll > res.fun:
+                        min_nll = res.fun
+                        opt_x = res.x
+
+            if opt_x is None:
+                warnings.warn("The estimation did not work")
+            else:
+                self.learning_rate = res.x[1][0]
+        else:
+            raise ValueError("There are no free parameters.")
+
+        self.is_fitted = True
+        return min_nll, opt_x
+
+    @staticmethod
     def calculate_nll(
-            self,
-            a: float,
-            b: float,
+            learning_rate: float,
+            inverse_temperature: float,
             num_choices: int,
             actions: array_like,
             rewards: array_like,
@@ -101,9 +207,9 @@ class QSoftmaxModel(Model):
 
         Parameters
         ----------
-        a : float
+        learning_rate : float
             learning rate
-        b : float
+        inverse_temperature : float
             inverse temperature
         num_choices : int
             The number of choices
@@ -130,8 +236,8 @@ class QSoftmaxModel(Model):
         for t in range(time_horizon - 1):
             q_vals[t + 1, :] = q_vals[t, :]
             prev_q_val = q_vals[t, actions[t]]
-            q_vals[t + 1, actions[t]] = prev_q_val + a * (rewards[t] - prev_q_val)
+            q_vals[t + 1, actions[t]] = prev_q_val + learning_rate * (rewards[t] - prev_q_val)
 
-        choice_probs = softmax(b * q_vals, axis=1)
-        neg_log_likelihood = - np.log(choice_probs[np.arange(time_horizon), actions]).sum()
+        choice_probs = softmax(inverse_temperature * q_vals, axis=1)
+        neg_log_likelihood = - np.log(choice_probs[np.arange(time_horizon), actions] + 1e-8).sum()
         return neg_log_likelihood
