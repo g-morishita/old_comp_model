@@ -108,7 +108,8 @@ class QSoftmaxModel(Model):
 
         # Decide the negative log-likelihood function and the constraints according to the free parameters.
         if (self.learning_rate is None) and (self.inverse_temperature is None):
-            def neg_ll(a, b):
+            def neg_ll(args):
+                a, b = args
                 return self.calculate_nll(a, b, num_choices, actions, rewards)
 
             A = np.eye(2)
@@ -122,7 +123,8 @@ class QSoftmaxModel(Model):
                 init_a = np.random.beta(2, 2)
                 init_b = np.random.gamma(2, 0.333)
                 init_param = [init_a, init_b]
-                res = minimize(neg_ll, init_param, method="COBYLA", options=options, constraints=const)
+                # It was too slow when using COBYLA as a method.
+                res = minimize(neg_ll, init_param, method="SLSQP", options=options, constraints=const)
                 if not res.success:
                     warnings.warn(res.message)
                 else:
@@ -133,9 +135,10 @@ class QSoftmaxModel(Model):
             if opt_x is None:
                 warnings.warn("The estimation did not work")
             else:
-                self.learning_rate = res.x[1][0]
-                self.inverse_temperature = res.x[1][1]
+                self.learning_rate = res.x[0]
+                self.inverse_temperature = res.x[1]
 
+        # In the case the inverse temperature is a free parameter.
         elif self.learning_rate is not None:
             def neg_ll(b):
                 return self.calculate_nll(self.learning_rate, b, num_choices, actions, rewards)
@@ -161,8 +164,9 @@ class QSoftmaxModel(Model):
             if opt_x is None:
                 warnings.warn("The estimation did not work")
             else:
-                self.inverse_temperature = res.x[1][0]
+                self.inverse_temperature = res.x[0]
 
+        # In the case the learning rate is only a free parameter.
         elif self.inverse_temperature is not None:
             def neg_ll(a):
                 return self.calculate_nll(a, self.inverse_temperature, num_choices, actions, rewards)
@@ -188,7 +192,7 @@ class QSoftmaxModel(Model):
             if opt_x is None:
                 warnings.warn("The estimation did not work")
             else:
-                self.learning_rate = res.x[1][0]
+                self.learning_rate = res.x[0]
         else:
             raise ValueError("There are no free parameters.")
 

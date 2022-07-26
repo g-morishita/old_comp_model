@@ -15,7 +15,7 @@ inverse_temperature = 2.0
 def create_dataset():
     means = [0.7, 0.4]
     initial_values = [0, 0]
-    time_horizon = 100
+    time_horizon = 1000
     q_learner = QSoftmax(learning_rate, inverse_temperature, initial_values)
     two_armed_bandit = BernoulliMultiArmedBandit(means)
 
@@ -53,18 +53,26 @@ class TestQSoftmaxModel:
 
     def test_fit(self):
         q_model = QSoftmaxModel(inverse_temperature=inverse_temperature)
+        assert q_model.learning_rate is None
         actions = self.history["actions"]
         rewards = self.history["reward"]
         q_model.fit(2, actions, rewards)
+        assert q_model.learning_rate is not None
 
     def test_fit2(self):
         q_model = QSoftmaxModel(learning_rate=learning_rate)
+        assert q_model.inverse_temperature is None
         actions = self.history["actions"]
         rewards = self.history["reward"]
         q_model.fit(2, actions, rewards)
+        assert q_model.inverse_temperature is not None
 
     def test_fit3(self):
         q_model = QSoftmaxModel()
+        assert q_model.learning_rate is None
+        assert q_model.inverse_temperature is None
         actions = self.history["actions"]
         rewards = self.history["reward"]
         q_model.fit(2, actions, rewards)
+        assert q_model.learning_rate is not None
+        assert q_model.inverse_temperature is not None
