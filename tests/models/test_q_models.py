@@ -3,7 +3,7 @@ from collections import defaultdict
 import numpy as np
 import pytest
 
-from bandit_exp.agents import QSoftmax
+from bandit_exp.agents.agents import QSoftmax
 from bandit_exp.bandit_tasks import BernoulliMultiArmedBandit
 from bandit_exp.models.q_model import QSoftmaxModel
 

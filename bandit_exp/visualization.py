@@ -1,5 +1,5 @@
 from environment import SingleEnvironment
-from agents import QSoftmax, EpsilonGreedy
+from bandit_exp.agents.agents import QSoftmax, EpsilonGreedy
 from bandit_tasks import BernoulliMultiArmedBandit
 
 import streamlit as st

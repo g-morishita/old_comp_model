@@ -1,8 +1,7 @@
-import os
 import json
 from collections import defaultdict
 
-from agents import Agent
+from bandit_exp.agents.agents import Agent
 from bandit_tasks import Bandit
 
 

@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 from scipy.special import softmax
 
-from .types import array_like
+from bandit_exp.types import array_like
 
 
 class Agent(ABC):
