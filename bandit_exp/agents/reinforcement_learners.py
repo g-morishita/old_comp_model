@@ -1,27 +1,8 @@
-from abc import ABC, abstractmethod
-
 import numpy as np
 from scipy.special import softmax
 
 from bandit_exp.types import array_like
-
-
-class Agent(ABC):
-    """
-    Agent class is supposed to be in charge of
-    choosing actions and updating hyperparameters.
-    """
-
-    def __init__(self):
-        self.estimated_values = None
-
-    @abstractmethod
-    def choose_action(self) -> int:
-        """choose_action choose an action."""
-
-    @abstractmethod
-    def learn(self, chosen_action: int, reward: float) -> None:
-        """learn is supposed to update hyperparameters in a model."""
+from .base import Agent
 
 
 class EpsilonGreedy(Agent):
@@ -29,9 +10,7 @@ class EpsilonGreedy(Agent):
     EpsilonGreedy implements a agent that follows the epsilon greedy method.
     """
 
-    def __init__(
-            self, epsilon: float, initial_values: array_like
-    ) -> None:
+    def __init__(self, epsilon: float, initial_values: array_like) -> None:
         self.epsilon = epsilon
         self.estimated_values = np.array(initial_values, dtype=float)
         self.n_chosen_actions = np.zeros(len(initial_values))
@@ -58,7 +37,7 @@ class EpsilonGreedy(Agent):
     def learn(self, chosen_action: int, reward: float) -> None:
         n_chosen_actions = self.n_chosen_actions[chosen_action]
         self.estimated_values[chosen_action] = (
-                self.estimated_values[chosen_action] * (n_chosen_actions - 1) + reward
+            self.estimated_values[chosen_action] * (n_chosen_actions - 1) + reward
         )
         self.estimated_values /= n_chosen_actions
 
@@ -70,10 +49,10 @@ class QSoftmax(Agent):
     """
 
     def __init__(
-            self,
-            learning_rate: float,
-            inverse_temperature: float,
-            initial_values: array_like,
+        self,
+        learning_rate: float,
+        inverse_temperature: float,
+        initial_values: array_like,
     ) -> None:
         super().__init__()
         self.estimated_values = np.array(initial_values, dtype=float)
@@ -98,5 +77,5 @@ class QSoftmax(Agent):
 
     def learn(self, chosen_action: int, reward: float) -> None:
         self.estimated_values[chosen_action] = self.estimated_values[
-                                                   chosen_action
-                                               ] + self.learning_rate * (reward - self.estimated_values[chosen_action])
+            chosen_action
+        ] + self.learning_rate * (reward - self.estimated_values[chosen_action])
