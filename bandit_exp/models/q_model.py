@@ -1,5 +1,4 @@
 import warnings
-from abc import ABC, abstractmethod
 from typing import Union
 
 import numpy as np
@@ -8,31 +7,7 @@ from scipy.special import softmax
 
 from .errors import AlreadyFittedError
 from ..types import array_like
-
-
-class Model(ABC):
-    """
-    The computational model class.
-    """
-
-    @abstractmethod
-    def fit(
-            self, num_choices: int, actions: array_like, rewards: array_like, **kwargs: dict
-    ) -> None:
-        """
-
-        Parameters
-        ----------
-        num_choices : int
-            The number of choices
-        actions : array_like
-            The observed choices
-        rewards : array_like
-            The observed rewards
-        kwargs : dict, optional
-            The optional parameters
-        """
-        pass
+from .base import Model
 
 
 class QSoftmaxModel(Model):
