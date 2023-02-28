@@ -43,7 +43,7 @@ class BernoulliMultiArmedBandit(Bandit):
 
         self.arms = []
         for mean in means:
-            self.arms.append(BernouliDistArm(mean))
+            self.arms.append(BernoulliDistArm(mean))
 
     def pull_arm(self, chosen_arm: int) -> float:
         if (chosen_arm < 0) or (chosen_arm >= len(self.arms)):
@@ -69,7 +69,7 @@ class NormalDistArm(Arm):
         return np.random.normal(self.mean, self.sd)[0]
 
 
-class BernouliDistArm(Arm):
+class BernoulliDistArm(Arm):
     def __init__(self, mean: Union[int, float]) -> None:
         if (mean < 0) or (mean > 1):
             raise ValueError(
