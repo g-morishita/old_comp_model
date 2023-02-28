@@ -2,3 +2,6 @@
 notebooks/*
 bandit_exp/__pycache__/*
 bandit_exp.egg-info/*
+*.pyc
+build/*
+.ipynb_checkpoints/*
