@@ -67,9 +67,6 @@ class QSoftmax(Agent):
 
         self.inverse_temperature = inverse_temperature
 
-        self.estimated_learning_rate = None
-        self.estimated_beta = None
-
     def choose_action(self) -> int:
         action_probs = softmax(self.estimated_values * self.inverse_temperature)
         chosen_action = np.random.choice(len(action_probs), size=1, p=action_probs)
