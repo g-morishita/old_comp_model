@@ -126,3 +126,54 @@ class TestQLearnerSoftmax:
 
         # Pr(chi2(2) < 4.605) = 0.9
         assert chi2_stats < 4.605
+
+
+class TestActionLeaner:
+    # learning rate is more than 1.
+    def test_excess_learning_rate(self):
+        with pytest.raises(ValueError):
+            reinforcement_learners.ActionLearner(1.1, [0.5, 0.5])
+
+    # learning rate is less than 0.
+    def test_excess_learning_rate2(self):
+        with pytest.raises(ValueError):
+            reinforcement_learners.ActionLearner(-0.1, [0.5, 0.5])
+
+    def test_excess_num_choices(self):
+        with pytest.raises(ValueError):
+            reinforcement_learners.ActionLearner(0.4, [0.3, 0.5, 0.2])
+
+    def test_invalid_num_choices(self):
+        with pytest.raises(ValueError):
+            reinforcement_learners.ActionLearner(0.4, [1.0])
+
+    def test_invalid_choices(self):
+        with pytest.raises(ValueError):
+            reinforcement_learners.ActionLearner(0.2, [0.3, 0.5])
+
+    # check if learn works.
+    def test_learn(self):
+        agent = reinforcement_learners.ActionLearner(0.1, [0.5, 0.5])
+        agent.learn(0)
+        assert agent.estimated_values[0] == pytest.approx(0.55)
+        assert agent.estimated_values[1] == pytest.approx(0.45)
+
+        agent.learn(1)
+        assert agent.estimated_values[0] == pytest.approx(0.495)
+        assert agent.estimated_values[1] == pytest.approx(0.505)
+
+    def test_choose_action(self):
+        initial_probs = np.array([0.2, 0.8])
+        agent = reinforcement_learners.ActionLearner(0.1, initial_probs)
+
+        n_trials = 30000
+        action_counter = np.zeros(2)
+        for _ in range(n_trials):
+            chosen_action = agent.choose_action()
+            action_counter[chosen_action] += 1
+        expected_nums = initial_probs * n_trials
+        chi2_stats = ((expected_nums - action_counter) ** 2 / expected_nums).sum()
+
+        # Pr(chi2(2) < 4.605) = 0.9
+        print(agent.estimated_values)
+        assert chi2_stats < 4.605
