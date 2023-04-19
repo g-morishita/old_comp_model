@@ -1,5 +1,6 @@
 from ..agents.base import Agent
 from ..bandit_tasks import Bandit
+import copy
 
 
 class Generator:
@@ -25,7 +26,7 @@ class Generator:
             )
 
         self.agent = agent
-        self.original_agent = deepcopy(agent)
+        self.original_agent = copy.deepcopy(agent)
         self.bandit_task = bandit_task
         self.done_simulation = False
         self.history = {"choices": [], "rewards": []}
@@ -52,7 +53,7 @@ class Generator:
 
     def reset(self):
         """Reset agent and history."""
-        self.agent = deepcopy(self.original_agent)
+        self.agent = copy.deepcopy(self.original_agent)
         self.history = {"choices": [], "rewards": []}
         self.done_simulation = False
         self.total_trials = 0
