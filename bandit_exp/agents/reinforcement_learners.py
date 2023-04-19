@@ -88,21 +88,21 @@ class ActionLearner(Agent):
     This model only deals with a situation where there are two actions.
     """
 
-    def __init__(self, learning_rate: float, initial_probs: array_like) -> None:
+    def __init__(self, learning_rate: float, initial_values: array_like) -> None:
         super().__init__()
-        if len(initial_probs) != 2:
+        if len(initial_values) != 2:
             raise ValueError(
                 f"The number of actions should be two, so the length of `initial_probs` has to be two. "
-                f"But that of the given `initial_probs` is {len(initial_probs)}"
+                f"But that of the given `initial_probs` is {len(initial_values)}"
             )
 
-        if not np.isclose(np.sum(initial_probs), 1.0):
+        if not np.isclose(np.sum(initial_values), 1.0):
             raise ValueError(
                 f"The sum of `initial_probs` has to add to 1."
-                f"But that of the given is {np.sum(initial_probs)}"
+                f"But that of the given is {np.sum(initial_values)}"
             )
 
-        self.estimated_values = np.array(initial_probs, dtype=float)
+        self.estimated_values = np.array(initial_values, dtype=float)
 
         if (0 < learning_rate) and (learning_rate < 1.0):
             self.learning_rate = learning_rate
