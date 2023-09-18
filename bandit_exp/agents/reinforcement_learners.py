@@ -88,18 +88,12 @@ class ActionLearner(Agent):
     This model only deals with a situation where there are two actions.
     """
 
-    def __init__(self, learning_rate: float, initial_values: array_like) -> None:
+    def __init__(self, learning_rate: float, inverse_temperature: float, initial_values: array_like) -> None:
         super().__init__()
         if len(initial_values) != 2:
             raise ValueError(
                 f"The number of actions should be two, so the length of `initial_probs` has to be two. "
                 f"But that of the given `initial_probs` is {len(initial_values)}"
-            )
-
-        if not np.isclose(np.sum(initial_values), 1.0):
-            raise ValueError(
-                f"The sum of `initial_probs` has to add to 1."
-                f"But that of the given is {np.sum(initial_values)}"
             )
 
         self.estimated_values = np.array(initial_values, dtype=float)
@@ -112,13 +106,18 @@ class ActionLearner(Agent):
                              but the given learning_rate is {learning_rate}"
             )
 
+        self.inverse_temperature = inverse_temperature
+
     def choose_action(self) -> int:
-        chosen_action = np.random.choice(
-            len(self.estimated_values), size=1, p=self.estimated_values
-        )
+        action_probs = softmax(self.estimated_values * self.inverse_temperature)
+        chosen_action = np.random.choice(len(action_probs), size=1, p=action_probs)
         return chosen_action[0]
 
     def learn(self, chosen_action: int, reward=None) -> None:
-        observed = int(chosen_action == 0)
-        self.estimated_values[0] = self.estimated_values[0] + self.learning_rate * (observed - self.estimated_values[0])
-        self.estimated_values[1] = 1 - self.estimated_values[0]
+        self.estimated_values[chosen_action] = self.estimated_values[chosen_action] + self.learning_rate * (
+                    1 - self.estimated_values[chosen_action])
+
+        self.estimated_values[1 - chosen_action] = 1 - self.estimated_values[chosen_action]
+
+        # self.estimated_values[1 - chosen_action] = self.estimated_values[1 - chosen_action] + self.learning_rate * (
+        #             0 - self.estimated_values[1 - chosen_action])

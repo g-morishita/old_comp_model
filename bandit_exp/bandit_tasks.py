@@ -34,6 +34,11 @@ class NormalMultiArmedBandit(Bandit):
 
         return self.arms[chosen_arm].give_reward()
 
+    def switch(self):
+        if len(self.arms) != 2:
+            raise NotImplemented("siwtch for more than two arms has not been implemented.")
+        self.arms[0], self.arms[1] = self.arms[1], self.arms[0]
+
 
 class BernoulliMultiArmedBandit(Bandit):
     def __init__(
@@ -53,6 +58,11 @@ class BernoulliMultiArmedBandit(Bandit):
             )
 
         return self.arms[chosen_arm].give_reward()
+
+    def switch(self):
+        if len(self.arms) != 2:
+            raise NotImplemented("siwtch for more than two arms has not been implemented.")
+        self.arms[0], self.arms[1] = self.arms[1], self.arms[0]
 
 
 class Arm(ABC):

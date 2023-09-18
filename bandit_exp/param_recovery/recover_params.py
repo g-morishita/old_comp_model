@@ -24,3 +24,5 @@ class RecoverParams:
         rewards = self.generator.history["rewards"]
 
         self.model.fit(num_choices, choices, rewards, **kwargs)
+
+        return self.model
