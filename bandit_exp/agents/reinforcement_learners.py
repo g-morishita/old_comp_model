@@ -1,5 +1,3 @@
-import math
-
 import numpy as np
 from bandit_exp.types import array_like
 from scipy.special import softmax
