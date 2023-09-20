@@ -119,5 +119,89 @@ class ActionLearner(Agent):
 
         self.estimated_values[1 - chosen_action] = 1 - self.estimated_values[chosen_action]
 
-        # self.estimated_values[1 - chosen_action] = self.estimated_values[1 - chosen_action] + self.learning_rate * (
-        #             0 - self.estimated_values[1 - chosen_action])
+
+class QActionSoftmax(Agent):
+    """
+    QActionSoftmax implements a hybrid model of Q learning and Action learning models.
+    The values of options are based on action history and reward history.
+    The model chooses an action using softmax function.
+
+    Parameters
+    ----------
+    lr_a : float
+        The learning rate for Q value
+    lr_a : float
+        The learning rate for action value
+    inverse_temperature : float
+        The inverse temperature for the combined value
+    weight : float
+        The weight of Q value. (1 - w) is the weight of the action value
+        The combined value is calculated like this:
+    initial_values_q : array_like
+        The initial values for Q values
+    initial_values_a : array_like
+        The initial values for action values
+    """
+
+    def __init__(
+        self,
+        lr_q: float,
+        lr_a: float,
+        inverse_temperature: float,
+        weight: float,
+        initial_values_q: array_like,
+        initial_values_a: array_like
+    ) -> None:
+        super().__init__()
+        self.q_values = np.array(initial_values_q, dtype=float)
+        self.a_values = np.array(initial_values_a, dtype=float)
+
+        if (0 < lr_q) and (lr_q < 1.0):
+            self.lr_q = lr_q
+        else:
+            raise ValueError(
+                f"lr_q should be (0, 1), \
+                             but the given learning_rate is {lr_q}"
+            )
+
+        if (0 < lr_a) and (lr_a < 1.0):
+            self.lr_a = lr_a
+        else:
+            raise ValueError(
+                f"lr_a should be (0, 1), \
+                             but the given learning_rate is {lr_q}"
+            )
+
+        if inverse_temperature >= 0:
+            self.inverse_temperature = inverse_temperature
+        else:
+            raise ValueError(
+                f"inverse_temperature should be non-negative, but {inverse_temperature} is given"
+            )
+
+        if (0 <= weight) and (weight <= 1.0):
+            self.weight = weight
+        else:
+            raise ValueError(
+                f"w should be (0, 1), \
+                             but the given weight is {weight}"
+            )
+
+    def choose_action(self) -> int:
+        values = self.weight * self.q_values + (1 - self.weight) * self.a_values
+        action_probs = softmax(values * self.inverse_temperature)
+        chosen_action = np.random.choice(len(action_probs), size=1, p=action_probs)
+        return chosen_action[0]
+
+    def learn(self, chosen_action: int, reward) -> None:
+        # Update Q values
+        self.q_values[chosen_action] = self.q_values[chosen_action] + self.lr_q * (
+                    1 - self.q_values[chosen_action])
+
+        # Update Action values
+        self.a_values[chosen_action] = self.a_values[chosen_action] + self.lr_a * (
+                    1 - self.a_values[chosen_action])
+
+        not_chosen_actions = np.delete(np.arange(len(self.a_values)), chosen_action)
+        self.a_values[not_chosen_actions] = self.a_values[not_chosen_actions] + self.lr_a * (
+                    0 - self.a_values[not_chosen_actions])
